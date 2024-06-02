@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Q&A</title>
+</head>
+<body>
+    <h1>Upload Document and Ask Questions</h1>
+    <form id="upload-form">
+        <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.txt">
+        <button type="button" onclick="uploadFile()">Upload</button>
+    </form>
+    <div id="content" style="display: none;">
+        <h2>Extracted Content</h2>
+        <pre id="extracted-content"></pre>
+        <h2>Ask a Question</h2>
+        <input type="text" id="question-input" placeholder="Enter your question">
+        <button type="button" onclick="askQuestion()">Ask</button>
+        <h3>Answer</h3>
+        <pre id="answer"></pre>
+    </div>
+
+    <script>
+        let extractedContent = '';
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput.files.length === 0) {
+                alert('Please select a file.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                extractedContent = data.content;
+                document.getElementById('extracted-content').textContent = extractedContent;
+                document.getElementById('content').style.display = 'block';
+            } else {
+                alert('Failed to upload file: ' + data.error);
+            }
+        }
+
+        async function askQuestion() {
+            const questionInput = document.getElementById('question-input');
+            const question = questionInput.value;
+
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: question,
+                    content: extractedContent,
+                }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                document.getElementById('answer').textContent = data.answer;
+            } else {
+                alert('Failed to get answer: ' + data.error);
+            }
+        }
+    </script>
+</body>
+</html>
